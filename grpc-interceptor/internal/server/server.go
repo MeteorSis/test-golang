@@ -11,10 +11,15 @@ import (
 	"github.com/MeteorSis/test-golang/grpc-interceptor/proto"
 )
 
-func Serve(port uint16) error {
+type Server struct {
+	srv *grpc.Server
+	lis net.Listener
+}
+
+func New(port uint16) (*Server, error) {
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", port))
 	if err != nil {
-		return fmt.Errorf("failed to listen: %w", err)
+		return nil, fmt.Errorf("failed to listen: %w", err)
 	}
 
 	srv := grpc.NewServer(
@@ -41,10 +46,19 @@ func Serve(port uint16) error {
 	)
 	proto.RegisterEchoServer(srv, &server{})
 
-	if err := srv.Serve(lis); err != nil {
+	return &Server{srv: srv, lis: lis}, nil
+}
+
+func (s *Server) Serve() error {
+	if err := s.srv.Serve(s.lis); err != nil {
 		return fmt.Errorf("failed to serve: %w", err)
 	}
+
 	return nil
+}
+
+func (s *Server) GracefulStop() {
+	s.srv.GracefulStop()
 }
 
 type server struct {
