@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -40,7 +41,10 @@ func DoRequest(port uint16) error {
 		return fmt.Errorf("failed to dial: %w", err)
 	}
 	cli := proto.NewEchoClient(conn)
-	_, err = cli.SendMessage(context.Background(), &proto.SendMessageRequest{Message: "hello"})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	time.AfterFunc(time.Second, cancel)
+	_, err = cli.SendMessage(ctx, &proto.SendMessageRequest{Message: "hello"})
 	if err != nil {
 		return fmt.Errorf("failed to request: %w", err)
 	}

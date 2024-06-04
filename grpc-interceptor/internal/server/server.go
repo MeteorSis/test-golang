@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"google.golang.org/grpc"
 
@@ -25,6 +26,7 @@ func New(port uint16) (*Server, error) {
 	srv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+				ctx = context.WithoutCancel(ctx)
 				log.Println("server interceptor 1_before")
 				res, err := handler(ctx, req)
 				log.Println("server interceptor 1_after")
@@ -66,6 +68,8 @@ type server struct {
 }
 
 func (*server) SendMessage(ctx context.Context, req *proto.SendMessageRequest) (*proto.SendMessageResponse, error) {
-	log.Println("server handler")
+	<-time.After(1500 * time.Millisecond)
+
+	log.Println("server handler", ctx.Err())
 	return &proto.SendMessageResponse{Message: req.Message}, nil
 }
